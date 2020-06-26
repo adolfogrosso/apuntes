@@ -1,0 +1,15 @@
+Configuración virtual hosts para laravel
+
+<VirtualHost *:80>
+    DocumentRoot "c:/xampp/htdocs/onlylesbians/public"
+    ServerName onlylesbians.dev
+    SSLEngine off
+    <Directory "c:/xampp/htdocs/onlylesbians/public">
+        Options Indexes FollowSymLinks ExecCGI Includes
+        Order allow,deny
+        Allow from all
+        Options All
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
