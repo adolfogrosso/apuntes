@@ -13,3 +13,312 @@ Configuración virtual hosts para laravel
         Require all granted
     </Directory>
 </VirtualHost>
+
+
+Volcar en el origen la rama master:
+
+git remote add origin git@github.com:adolfogrosso/apuntes.git
+git push -u origin master
+
+laravel new onlylesbians
+
+Formulario dinámico con select option
+
+Helpers en Laravel
+
+***********************************************************************************
+
+Crear un View Component anónimo
+
+Comencemos creando el nuevo componente manualmente en el directorio resources/views/components:
+
+<!-- resources/views/components/form.blade.php -->
+<h1>Form Component</h1>
+ 
+
+Como puedes ver el componente se llama «form» y por los momentos solo contiene un título de prueba.
+
+Desde welcome.blade.php envolvamos el componente x-field que diseñamos en la lección pasada en el nuevo componente:
+
+<!-- resources/views/welcome.blade.php -->
+<x-form>
+    <x-field name="email_address" type="email" help="No compartiremos tu correo con terceros."></x-field>
+</x-form>
+1
+2
+3
+4
+5
+6
+	
+ 
+<!-- resources/views/welcome.blade.php -->
+<x-form>
+    <x-field name="email_address" type="email" help="No compartiremos tu correo con terceros."></x-field>
+</x-form>
+ 
+
+Al recargar la página lo único que veremos será el título «Form Component»; pero esto quiere decir que el componente está funcionando.
+Anidar componentes de Blade
+
+Regresemos al componente y coloquemos lo siguiente:
+
+<!-- resources/views/components/form.blade.php -->
+<form>
+    {{ $slot }}    
+</form>
+1
+2
+3
+4
+5
+6
+	
+ 
+<!-- resources/views/components/form.blade.php -->
+<form>
+    {{ $slot }}    
+</form>
+ 
+
+Ahora no solamente podemos ver el componente anterior, sino que está dentro de las etiquetas <form>. ¡Genial!
+
+Como habrás podido notar, la variable $slot que es pasada a la plantilla del componente, contiene el contenido que está dentro de las etiquetas de apertura y cierre (<x-form> y </x-form>).
+
+Este no es un concepto nuevo y ya lo discutimos en las lecciones Componentes y slots en Laravel 5.4 y Uso práctico de componentes y slots de Blade en Laravel. De hecho, la sintaxis anterior aún funciona:
+
+<!-- resources/views/welcome.blade.php -->
+@component('components.form')
+    <x-field name="email_address" type="email" help="No compartiremos tu correo con terceros."></x-field>
+@endcomponent
+1
+2
+3
+4
+5
+6
+	
+ 
+<!-- resources/views/welcome.blade.php -->
+@component('components.form')
+    <x-field name="email_address" type="email" help="No compartiremos tu correo con terceros."></x-field>
+@endcomponent
+ 
+
+Si recargas la página verás que el resultado obtenido es el mismo.
+Pasando atributos a un componente anónimo de Blade
+
+Ahora vamos a asignarle atributos a nuestro componente, por ejemplo, para indicar el método:
+
+<!-- resources/views/welcome.blade.php -->
+<x-form method="post">
+    <x-field name="email_address" type="email"></x-field>
+</x-form>
+1
+2
+3
+4
+5
+6
+	
+ 
+<!-- resources/views/welcome.blade.php -->
+<x-form method="post">
+    <x-field name="email_address" type="email"></x-field>
+</x-form>
+ 
+
+Podemos imprimir estos atributos con otra variable que recibiremos en la plantilla de nuestro componente, me refiero a $attributes:
+
+<!-- resources/views/components/form.blade.php -->
+<form {{ $attributes }}>
+    {{ $slot }}    
+</form>
+1
+2
+3
+4
+5
+6
+	
+ 
+<!-- resources/views/components/form.blade.php -->
+<form {{ $attributes }}>
+    {{ $slot }}    
+</form>
+ 
+
+La variable $attributes es una instancia de la clase Illuminate\View\ComponentAttributeBag. Esta clase posee algunos métodos útiles, como por ejemplo merge().
+
+merge() nos permite combinar los atributos pasados desde la vista, con atributos por defecto asignados desde el componente, por ejemplo, imagina que queremos que todos los formularios tengan la clase «form»:
+
+<!-- resources/views/components/form.blade.php -->
+<form {{ $attributes->merge(['class' => 'form']) }}>
+    {{ $slot }}    
+</form>
+1
+2
+3
+4
+5
+6
+	
+ 
+<!-- resources/views/components/form.blade.php -->
+<form {{ $attributes->merge(['class' => 'form']) }}>
+    {{ $slot }}    
+</form>
+ 
+
+Gracias al método merge podemos combinar otras clases desde la vista principal:
+
+<!-- resources/views/welcome.blade.php -->
+<x-form method="post" class="mt-4">
+    <x-field name="email_address" type="email"></x-field>
+</x-form>
+1
+2
+3
+4
+5
+6
+	
+ 
+<!-- resources/views/welcome.blade.php -->
+<x-form method="post" class="mt-4">
+    <x-field name="email_address" type="email"></x-field>
+</x-form>
+ 
+
+Este es el resultado final:
+
+<!-- Resultado final -->
+<form class="form mt-4" method="post">
+    <!-- //... -->
+</form>
+1
+2
+3
+4
+5
+6
+	
+ 
+<!-- Resultado final -->
+<form class="form mt-4" method="post">
+    <!-- //... -->
+</form>
+ 
+
+Desafortunadamente los formularios solo aceptan get y post, si queremos utilizar put, patch o delete debemos utilizar el campo oculto _method como hemos aprendido anteriormente.
+Uso de la directiva @props de Blade
+
+Vamos a convertir method en una variable / propiedad de este componente mediante el uso de la directiva @props y a agregar algo de lógica adicional:
+
+<!-- resources/views/components/form.blade.php -->
+@props(['method'])
+
+<form method="{{ $method == 'get' ? 'get' : 'post' }}" {{ $attributes->merge(['class' => 'form']) }}>
+    @if ($method != 'get')
+        @csrf
+    @endif
+
+    @if (in_array(strtolower($method), ['put', 'patch', 'delete']))
+        @method($method)
+    @endif
+
+    {{ $slot }}
+</form>
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+	
+ 
+<!-- resources/views/components/form.blade.php -->
+@props(['method'])
+ 
+<form method="{{ $method == 'get' ? 'get' : 'post' }}" {{ $attributes->merge(['class' => 'form']) }}>
+    @if ($method != 'get')
+        @csrf
+    @endif
+ 
+    @if (in_array(strtolower($method), ['put', 'patch', 'delete']))
+        @method($method)
+    @endif
+ 
+    {{ $slot }}
+</form>
+ 
+
+Nota que además he utilizado la directiva @csrf para generar el campo oculto para pasar la protección CSRF.
+Paso de atributos dinámicos
+
+Además, quiero demostrar que podemos asignar atributos con expresiones de PHP, similar a como lo logramos con Vue.js y la directiva v-bind:
+
+<!-- resources/views/welcome.blade.php -->
+<x-form method="post" :action="url('/')">
+    <!-- //... -->
+</x-form>
+1
+2
+3
+4
+5
+6
+	
+ 
+<!-- resources/views/welcome.blade.php -->
+<x-form method="post" :action="url('/')">
+    <!-- //... -->
+</x-form>
+ 
+
+Colocamos el nombre del atributo precedido por dos puntos, abrimos comillas y todo lo que está entre comillas se transpilará como una expresión de PHP:
+
+<?php
+    $component->withAttributes(['method' => 'post','action' => url('/')]);
+?>
+1
+2
+3
+4
+5
+	
+ 
+<?php
+    $component->withAttributes(['method' => 'post','action' => url('/')]);
+?>
+ 
+
+Componentes de una sola etiqueta
+
+Si el componente que quieres escribir no tiene contenido, puedes colocarlo como una sola etiqueta:
+
+<!-- resources/views/welcome.blade.php -->
+<x-field name="email_address" type="email" help="No compartiremos tu correo con terceros."/>
+1
+2
+3
+4
+	
+ 
+<!-- resources/views/welcome.blade.php -->
+<x-field name="email_address" type="email" help="No compartiremos tu correo con terceros."/>
+ 
+
+Esto se conoce en inglés como «self closing element».
+
+Espero que disfrutes de esta nueva característica de Blade en Laravel 7. Si te interesa continuar el desarrollo de estos componentes, por favor solicítalo en la sección de comentarios o a través de nuestro Slack y estaré creando una serie aparte donde desarrollaremos una nueva versión de Styde\Html desde cero.
